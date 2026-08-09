@@ -1,6 +1,7 @@
 package com.smartfarmer.ai.scheme.service;
 
 import com.smartfarmer.ai.exception.ResourceNotFoundException;
+import com.smartfarmer.ai.scheme.dto.SchemeRequest;
 import com.smartfarmer.ai.scheme.dto.SchemeResponse;
 import com.smartfarmer.ai.scheme.entity.GovernmentScheme;
 import com.smartfarmer.ai.scheme.repository.GovernmentSchemeRepository;
@@ -48,6 +49,37 @@ public class SchemeService {
     public Page<SchemeResponse> searchSchemes(String query, Pageable pageable) {
         return schemeRepository.searchSchemes(query, pageable)
                 .map(this::mapToResponse);
+    }
+
+    @Transactional
+    public SchemeResponse createScheme(SchemeRequest request) {
+        GovernmentScheme scheme = new GovernmentScheme();
+        apply(scheme, request);
+        return mapToResponse(schemeRepository.save(scheme));
+    }
+
+    @Transactional
+    public SchemeResponse updateScheme(UUID id, SchemeRequest request) {
+        GovernmentScheme scheme = schemeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Government Scheme not found with id: " + id));
+        apply(scheme, request);
+        return mapToResponse(schemeRepository.save(scheme));
+    }
+
+    @Transactional
+    public void deleteScheme(UUID id) {
+        GovernmentScheme scheme = schemeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Government Scheme not found with id: " + id));
+        schemeRepository.delete(scheme);
+    }
+
+    private void apply(GovernmentScheme scheme, SchemeRequest request) {
+        scheme.setTitle(request.title());
+        scheme.setCategory(request.category());
+        scheme.setState(request.state());
+        scheme.setEligibility(request.eligibility());
+        scheme.setActive(Boolean.TRUE.equals(request.active()));
+        scheme.setDescription(request.description());
     }
 
     private SchemeResponse mapToResponse(GovernmentScheme scheme) {
