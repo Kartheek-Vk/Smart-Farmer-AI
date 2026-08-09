@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    clean-disabled: false
+
+logging:
+  level:
+    root: WARN
+    com.smartfarmer.ai: INFO
+
+app:
+  otp:
+    expose-dev-code-in-response: true

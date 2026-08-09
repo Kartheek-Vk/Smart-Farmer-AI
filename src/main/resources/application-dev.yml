@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    com.smartfarmer.ai: INFO
+    org.springframework.security: INFO
+
+app:
+  otp:
+    expose-dev-code-in-response: true
