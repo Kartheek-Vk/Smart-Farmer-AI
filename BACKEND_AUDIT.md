@@ -8,9 +8,10 @@ Every PASS below was observed on this branch; nothing is marked PASS because a f
 | Check | Command / evidence |
 | --- | --- |
 | Build | `mvn -B clean verify` |
-| Tests | `mvn -B clean test` — 25 tests, 0 failures (JUnit 5, Mockito, Testcontainers PostgreSQL 16) |
+| Tests | `mvn -B clean test` — 29 tests, 0 failures (JUnit 5, Mockito, Testcontainers PostgreSQL 16) |
 | Runtime | `docker compose up -d --build`, application container reported `healthy` |
 | Database | Flyway applied V1–V4 on an empty PostgreSQL 16 database, then Hibernate `ddl-auto: validate` accepted every entity mapping |
+| Error handling | 400 for bad enums/malformed JSON/bad UUIDs/missing params, 404 for unknown routes, 405 for wrong methods, 409 duplicates, 503 unavailable providers — all uniform `ApiResponse` JSON |
 | APIs | curl smoke run against the running container (health, auth lifecycle, farms, crops, markets, schemes, notifications, reports, disease scan upload, recommendations, weather, assistant, admin) |
 
 ## Result table
@@ -18,10 +19,10 @@ Every PASS below was observed on this branch; nothing is marked PASS because a f
 | Area | Status | Notes |
 | --- | --- | --- |
 | Build | PASS | `mvn clean verify` succeeds on Java 21 / Spring Boot 3.5.4 |
-| Tests | PASS | 25 tests: JWT unit tests, auth lifecycle, farm ownership, admin authorization, provider boundaries, recommendation service |
+| Tests | PASS | 29 tests: JWT unit tests, auth lifecycle, farm ownership, admin authorization, provider boundaries, recommendation service, error mapping / session revocation / reports |
 | Database | PASS | V1–V4 apply cleanly; `ddl-auto: validate` (never `update`) passes against the migrated schema |
 | Authentication | PASS | register / login / refresh / logout / me plus forgot-password, reset-password, verify-otp, resend-otp |
-| Authorization | PASS | Role authorities on the JWT, `/api/v1/admin/**` requires `ADMIN` (403 for other roles), per-resource ownership checks return 403 |
+| Authorization | PASS | Role authorities on the JWT, `/api/v1/admin/**` requires `ADMIN` (403 for other roles), per-resource ownership checks return 403; deactivating a user invalidates their in-flight access tokens |
 | Users | PASS | profile, preferences, password change, deactivation, farmer profile — all DTO based |
 | Farms | PASS | paginated CRUD scoped to the owner |
 | Fields | PASS | CRUD under a farm, cross-farm access rejected |
@@ -36,6 +37,7 @@ Every PASS below was observed on this branch; nothing is marked PASS because a f
 | Admin | PASS | users, activate/deactivate, statistics, audit logs, scheme CRUD, market data, notifications |
 | Audit logging | PASS | `audit_logs` written for registration, login, admin actions; paginated admin read API |
 | Swagger | PASS | `/v3/api-docs` and `/swagger-ui/index.html` return 200; bearer security scheme documented |
+| Reports | PASS | generate / list / get / delete, scoped to the owner; metadata holds real aggregated counts of the caller's farms, crop seasons, scans and recommendations |
 | Docker | PASS | multi-stage `Dockerfile` (non-root runtime) and `docker-compose.yml` with a PostgreSQL healthcheck and `depends_on: service_healthy` |
 
 ## Deliberate limitations

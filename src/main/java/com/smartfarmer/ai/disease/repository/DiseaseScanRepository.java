@@ -12,5 +12,9 @@ public interface DiseaseScanRepository extends JpaRepository<DiseaseScan, UUID> 
 
     Page<DiseaseScan> findByUserId(UUID userId, Pageable pageable);
 
+    long countByUserId(UUID userId);
+
+    long countByUserIdAndFarmId(UUID userId, UUID farmId);
+
     Page<DiseaseScan> findByUserIdAndFarmId(UUID userId, UUID farmId, Pageable pageable);
 }

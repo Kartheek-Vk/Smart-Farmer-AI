@@ -4,6 +4,7 @@ import com.smartfarmer.ai.security.JwtAuthenticationEntryPoint;
 import com.smartfarmer.ai.security.JwtAuthenticationFilter;
 import com.smartfarmer.ai.security.JwtTokenProvider;
 import com.smartfarmer.ai.security.RestAccessDeniedHandler;
+import com.smartfarmer.ai.user.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,15 +25,18 @@ public class SecurityConfig {
     private final CorsProperties corsProperties;
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+    private final UserRepository userRepository;
 
     public SecurityConfig(JwtTokenProvider jwtTokenProvider,
                           CorsProperties corsProperties,
                           JwtAuthenticationEntryPoint authenticationEntryPoint,
-                          RestAccessDeniedHandler accessDeniedHandler) {
+                          RestAccessDeniedHandler accessDeniedHandler,
+                          UserRepository userRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.corsProperties = corsProperties;
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
+        this.userRepository = userRepository;
     }
 
     @Bean
@@ -58,7 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ADMIN")
                         .anyRequest().authenticated()
                 );
-        http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userRepository), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

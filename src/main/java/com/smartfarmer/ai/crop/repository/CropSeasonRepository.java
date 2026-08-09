@@ -14,6 +14,10 @@ public interface CropSeasonRepository extends JpaRepository<CropSeason, UUID> {
 
     Page<CropSeason> findByOwnerId(UUID ownerId, Pageable pageable);
 
+    long countByOwnerId(UUID ownerId);
+
+    long countByOwnerIdAndFarmId(UUID ownerId, UUID farmId);
+
     Page<CropSeason> findByOwnerIdAndFarmId(UUID ownerId, UUID farmId, Pageable pageable);
 
     Page<CropSeason> findByOwnerIdAndStatus(UUID ownerId, CropSeasonStatus status, Pageable pageable);

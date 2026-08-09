@@ -11,4 +11,6 @@ import org.springframework.stereotype.Repository;
 public interface RecommendationHistoryRepository extends JpaRepository<RecommendationHistory, UUID> {
 
     Page<RecommendationHistory> findByUserId(UUID userId, Pageable pageable);
+
+    long countByUserId(UUID userId);
 }
