@@ -18,8 +18,8 @@ import lombok.Setter;
 @Table(name = "refresh_tokens")
 public class RefreshToken extends BaseEntity {
 
-    @Column(nullable = false, unique = true, length = 255)
-    private String token;
+    @Column(name = "token_hash", nullable = false, unique = true, length = 128)
+    private String tokenHash;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
@@ -30,4 +30,8 @@ public class RefreshToken extends BaseEntity {
 
     @Column(nullable = false)
     private boolean revoked = false;
+
+    public boolean isActive(Instant now) {
+        return !revoked && expiresAt.isAfter(now);
+    }
 }
