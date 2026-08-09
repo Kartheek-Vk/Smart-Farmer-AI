@@ -1,6 +1,6 @@
 package com.smartfarmer.ai.admin.entity;
 
-import com.smartfarmer.ai.common.entity.BaseEntity;
+import com.smartfarmer.ai.common.model.BaseEntity;
 import com.smartfarmer.ai.user.entity.User;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

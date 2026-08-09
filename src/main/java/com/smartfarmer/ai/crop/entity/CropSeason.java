@@ -1,11 +1,14 @@
 package com.smartfarmer.ai.crop.entity;
 
+import com.smartfarmer.ai.common.enums.CropSeasonStatus;
 import com.smartfarmer.ai.common.model.BaseEntity;
 import com.smartfarmer.ai.farm.entity.Farm;
 import com.smartfarmer.ai.farm.entity.FarmField;
 import com.smartfarmer.ai.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -42,8 +45,9 @@ public class CropSeason extends BaseEntity {
     @Column
     private LocalDate endDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
-    private String status;
+    private CropSeasonStatus status;
 
     @Column(length = 255)
     private String notes;

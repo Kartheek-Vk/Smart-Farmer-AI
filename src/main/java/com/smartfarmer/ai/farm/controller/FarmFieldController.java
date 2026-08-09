@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
@@ -31,6 +32,7 @@ public class FarmFieldController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<FieldResponse> createField(@PathVariable UUID farmId, @Valid @RequestBody CreateFieldRequest request, HttpServletRequest httpRequest) {
         User user = currentUserService.currentUser();
         FieldResponse response = farmFieldService.createField(farmId, request, user);

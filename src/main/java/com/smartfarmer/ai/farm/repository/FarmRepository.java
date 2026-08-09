@@ -13,4 +13,6 @@ import java.util.UUID;
 public interface FarmRepository extends JpaRepository<Farm, UUID> {
     List<Farm> findByOwnerId(UUID ownerId);
     Page<Farm> findByOwnerId(UUID ownerId, Pageable pageable);
+
+    long countByOwnerId(UUID ownerId);
 }

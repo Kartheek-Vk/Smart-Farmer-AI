@@ -1,13 +1,13 @@
 package com.smartfarmer.ai.farm.service;
 
 import com.smartfarmer.ai.exception.ResourceNotFoundException;
-import com.smartfarmer.ai.exception.UnauthorizedException;
 import com.smartfarmer.ai.farm.dto.CreateFarmRequest;
 import com.smartfarmer.ai.farm.dto.FarmResponse;
 import com.smartfarmer.ai.farm.dto.UpdateFarmRequest;
 import com.smartfarmer.ai.farm.entity.Farm;
 import com.smartfarmer.ai.farm.repository.FarmRepository;
 import com.smartfarmer.ai.user.entity.User;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -43,12 +43,7 @@ public class FarmService {
 
     @Transactional(readOnly = true)
     public Page<FarmResponse> getFarms(User owner, Pageable pageable) {
-        // Find farms by owner manually filtering via stream or add method to repo. 
-        // We will assume a method findByOwnerId exists or we use findAll and filter, but better to use pageable approach.
-        // Actually FarmRepository has List<Farm> findByOwnerId(UUID ownerId), but not a pageable one.
-        // Let's implement stream over findAll for now or just fetch all and return if not strictly requiring pagination in repo.
-        // Wait, standard practice is to use a custom query if Page is needed. But since I can't easily add findByOwnerId(UUID, Pageable) to repository concurrently without `replace_file_content`, I'll fetch all and map or use standard findAll.
-        throw new UnsupportedOperationException("Not fully implemented without repository changes"); // WILL REPLACE
+        return farmRepository.findByOwnerId(owner.getId(), pageable).map(this::mapToResponse);
     }
 
     @Transactional(readOnly = true)
@@ -85,7 +80,7 @@ public class FarmService {
         Farm farm = farmRepository.findById(farmId)
                 .orElseThrow(() -> new ResourceNotFoundException("Farm not found with id: " + farmId));
         if (!farm.getOwner().getId().equals(ownerId)) {
-            throw new UnauthorizedException("You do not have permission to access this farm");
+            throw new AccessDeniedException("You do not have permission to access this farm");
         }
         return farm;
     }

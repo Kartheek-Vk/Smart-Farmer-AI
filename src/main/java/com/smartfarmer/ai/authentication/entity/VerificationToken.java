@@ -1,6 +1,6 @@
 package com.smartfarmer.ai.authentication.entity;
 
-import com.smartfarmer.ai.common.enums.TokenType;
+import com.smartfarmer.ai.common.enums.OtpPurpose;
 import com.smartfarmer.ai.common.model.BaseEntity;
 import com.smartfarmer.ai.user.entity.User;
 import jakarta.persistence.Column;
@@ -26,11 +26,11 @@ public class VerificationToken extends BaseEntity {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 40)
-    private TokenType type;
+    @Column(name = "purpose", nullable = false, length = 40)
+    private OtpPurpose purpose;
 
-    @Column(nullable = false, length = 12)
-    private String code;
+    @Column(name = "code_hash", nullable = false, length = 128)
+    private String codeHash;
 
     @Column(nullable = false)
     private Instant expiresAt;

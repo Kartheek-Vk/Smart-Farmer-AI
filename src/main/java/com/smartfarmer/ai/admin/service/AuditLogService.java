@@ -4,7 +4,10 @@ import com.smartfarmer.ai.admin.entity.AuditLog;
 import com.smartfarmer.ai.admin.repository.AuditLogRepository;
 import com.smartfarmer.ai.security.CurrentUserService;
 import com.smartfarmer.ai.user.entity.User;
+import com.smartfarmer.ai.admin.dto.AuditLogResponse;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -41,6 +44,23 @@ public class AuditLogService {
     @Transactional(readOnly = true)
     public List<AuditLog> latest() {
         return auditLogRepository.findTop100ByOrderByCreatedAtDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLogResponse> list(Pageable pageable) {
+        return auditLogRepository.findAllByOrderByCreatedAtDesc(pageable).map(this::mapToResponse);
+    }
+
+    private AuditLogResponse mapToResponse(AuditLog log) {
+        return new AuditLogResponse(
+                log.getId(),
+                log.getActor() != null ? log.getActor().getId() : null,
+                log.getAction(),
+                log.getTargetType(),
+                log.getTargetId(),
+                log.getDetails(),
+                log.getIpAddress(),
+                log.getCreatedAt());
     }
 
     private String resolveClientIp() {
