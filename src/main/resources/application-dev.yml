@@ -8,5 +8,7 @@ logging:
     org.springframework.security: INFO
 
 app:
+  jwt:
+    secret: ${JWT_SECRET:local-development-secret-local-development-secret}
   otp:
     expose-dev-code-in-response: true
