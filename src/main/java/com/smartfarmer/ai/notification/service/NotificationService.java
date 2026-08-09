@@ -2,11 +2,11 @@ package com.smartfarmer.ai.notification.service;
 
 import com.smartfarmer.ai.common.enums.NotificationType;
 import com.smartfarmer.ai.exception.ResourceNotFoundException;
-import com.smartfarmer.ai.exception.UnauthorizedException;
 import com.smartfarmer.ai.notification.dto.NotificationResponse;
 import com.smartfarmer.ai.notification.entity.Notification;
 import com.smartfarmer.ai.notification.repository.NotificationRepository;
 import com.smartfarmer.ai.user.entity.User;
+import org.springframework.security.access.AccessDeniedException;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -68,7 +68,7 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + id));
         if (!notification.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedException("You are not authorized to access this notification");
+            throw new AccessDeniedException("You are not authorized to access this notification");
         }
         return notification;
     }

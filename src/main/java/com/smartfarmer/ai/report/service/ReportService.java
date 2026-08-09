@@ -1,11 +1,11 @@
 package com.smartfarmer.ai.report.service;
 
 import com.smartfarmer.ai.exception.ResourceNotFoundException;
-import com.smartfarmer.ai.exception.UnauthorizedException;
 import com.smartfarmer.ai.report.dto.ReportResponse;
 import com.smartfarmer.ai.report.entity.Report;
 import com.smartfarmer.ai.report.repository.ReportRepository;
 import com.smartfarmer.ai.user.entity.User;
+import org.springframework.security.access.AccessDeniedException;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +33,7 @@ public class ReportService {
                 .orElseThrow(() -> new ResourceNotFoundException("Report not found with id: " + id));
 
         if (!report.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedException("You do not have access to this report");
+            throw new AccessDeniedException("You do not have access to this report");
         }
 
         return mapToResponse(report);

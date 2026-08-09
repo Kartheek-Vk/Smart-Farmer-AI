@@ -11,8 +11,8 @@ import com.smartfarmer.ai.assistant.repository.AIConversationRepository;
 import com.smartfarmer.ai.assistant.repository.AIMessageRepository;
 import com.smartfarmer.ai.common.enums.ConversationRole;
 import com.smartfarmer.ai.exception.ResourceNotFoundException;
-import com.smartfarmer.ai.exception.UnauthorizedException;
 import com.smartfarmer.ai.user.entity.User;
+import org.springframework.security.access.AccessDeniedException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -23,13 +23,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AssistantService {
 
+    private static final int MAX_CONTENT_LENGTH = 4000;
+
     private final AIConversationRepository conversationRepository;
     private final AIMessageRepository messageRepository;
+    private final AssistantProvider assistantProvider;
 
     public AssistantService(AIConversationRepository conversationRepository,
-                            AIMessageRepository messageRepository) {
+                            AIMessageRepository messageRepository,
+                            AssistantProvider assistantProvider) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
+        this.assistantProvider = assistantProvider;
     }
 
     @Transactional
@@ -37,8 +42,7 @@ public class AssistantService {
         AIConversation conversation = new AIConversation();
         conversation.setUser(user);
         conversation.setTitle(request.title());
-        conversation = conversationRepository.save(conversation);
-        return mapToConversationResponse(conversation);
+        return mapToConversationResponse(conversationRepository.save(conversation));
     }
 
     @Transactional(readOnly = true)
@@ -63,9 +67,19 @@ public class AssistantService {
         );
     }
 
+    /**
+     * Stores the user message and answers with the configured provider. If no provider is
+     * configured the provider raises a 503 and the whole exchange is rolled back, so the
+     * conversation never contains a placeholder answer.
+     */
     @Transactional
     public MessageResponse sendMessage(UUID conversationId, User user, SendMessageRequest request) {
         AIConversation conversation = getConversationEntity(conversationId, user);
+
+        List<AssistantProvider.AssistantTurn> history =
+                messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId).stream()
+                        .map(message -> new AssistantProvider.AssistantTurn(message.getRole().name(), message.getContent()))
+                        .toList();
 
         AIMessage userMessage = new AIMessage();
         userMessage.setConversation(conversation);
@@ -73,21 +87,22 @@ public class AssistantService {
         userMessage.setContent(request.content());
         messageRepository.save(userMessage);
 
+        String answer = assistantProvider.reply(history, request.content());
+
         AIMessage aiMessage = new AIMessage();
         aiMessage.setConversation(conversation);
         aiMessage.setRole(ConversationRole.ASSISTANT);
-        aiMessage.setContent("AI response integration pending via Gemini/FastAPI");
+        aiMessage.setContent(truncate(answer));
         aiMessage = messageRepository.save(aiMessage);
 
-        // Update conversation's updatedAt timestamp
         conversationRepository.save(conversation);
-
         return mapToMessageResponse(aiMessage);
     }
 
     @Transactional
     public void deleteConversation(UUID id, User user) {
         AIConversation conversation = getConversationEntity(id, user);
+        messageRepository.deleteAll(messageRepository.findByConversationIdOrderByCreatedAtAsc(id));
         conversationRepository.delete(conversation);
     }
 
@@ -95,9 +110,13 @@ public class AssistantService {
         AIConversation conversation = conversationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Conversation not found with id: " + id));
         if (!conversation.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedException("You do not have access to this conversation");
+            throw new AccessDeniedException("You do not have access to this conversation");
         }
         return conversation;
+    }
+
+    private String truncate(String content) {
+        return content.length() <= MAX_CONTENT_LENGTH ? content : content.substring(0, MAX_CONTENT_LENGTH);
     }
 
     private ConversationResponse mapToConversationResponse(AIConversation conversation) {
