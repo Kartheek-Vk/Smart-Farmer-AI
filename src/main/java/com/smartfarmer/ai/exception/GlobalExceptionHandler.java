@@ -1,12 +1,16 @@
 package com.smartfarmer.ai.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.smartfarmer.ai.common.api.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -48,7 +52,8 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException.class,
             MethodArgumentTypeMismatchException.class,
             MissingServletRequestParameterException.class,
-            MissingServletRequestPartException.class
+            MissingServletRequestPartException.class,
+            PropertyReferenceException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleMalformedRequest(Exception ex, HttpServletRequest request) {
         return ResponseEntity.badRequest()
@@ -141,7 +146,29 @@ public class GlobalExceptionHandler {
         if (ex instanceof MissingServletRequestPartException missingPart) {
             return missingPart.getRequestPartName() + ": required request part is missing";
         }
+        if (ex instanceof PropertyReferenceException propertyReference) {
+            return propertyReference.getPropertyName() + ": unknown sort or filter property";
+        }
+        if (ex instanceof HttpMessageNotReadableException notReadable
+                && notReadable.getCause() instanceof InvalidFormatException invalidFormat) {
+            return describeInvalidValue(invalidFormat);
+        }
         return "The request body could not be read or contains an unsupported value";
+    }
+
+    private String describeInvalidValue(InvalidFormatException ex) {
+        String field = ex.getPath().stream()
+                .map(JsonMappingException.Reference::getFieldName)
+                .filter(Objects::nonNull)
+                .reduce((first, second) -> first + "." + second)
+                .orElse("request body");
+        Class<?> targetType = ex.getTargetType();
+        if (targetType != null && targetType.isEnum()) {
+            return field + ": must be one of "
+                    + List.of(targetType.getEnumConstants());
+        }
+        return field + ": expected a valid "
+                + (targetType != null ? targetType.getSimpleName() : "value");
     }
 
     private String formatFieldError(FieldError error) {

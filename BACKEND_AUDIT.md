@@ -11,7 +11,7 @@ Every PASS below was observed on this branch; nothing is marked PASS because a f
 | Tests | `mvn -B clean test` — 29 tests, 0 failures (JUnit 5, Mockito, Testcontainers PostgreSQL 16) |
 | Runtime | `docker compose up -d --build`, application container reported `healthy` |
 | Database | Flyway applied V1–V4 on an empty PostgreSQL 16 database, then Hibernate `ddl-auto: validate` accepted every entity mapping |
-| Error handling | 400 for bad enums/malformed JSON/bad UUIDs/missing params, 404 for unknown routes, 405 for wrong methods, 409 duplicates, 503 unavailable providers — all uniform `ApiResponse` JSON |
+| Error handling | 400 for bad enums/malformed JSON/bad UUIDs/missing params/unknown sort properties, 404 for unknown routes, 405 for wrong methods, 415 for unsupported media types, 409 duplicates, 503 unavailable providers — all uniform `ApiResponse` JSON, with genuinely unexpected errors logged server-side only |
 | APIs | curl smoke run against the running container (health, auth lifecycle, farms, crops, markets, schemes, notifications, reports, disease scan upload, recommendations, weather, assistant, admin) |
 
 ## Result table

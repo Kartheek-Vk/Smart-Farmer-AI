@@ -129,7 +129,7 @@ public class ReportService {
                     metrics.put("recommendations", recommendationHistoryRepository.countByUserId(user.getId()));
             case MARKET_TREND -> {
                 metrics.put("cropSeasons", cropSeasonRepository.countByOwnerId(user.getId()));
-                metrics.put("marketPriceRecords", marketPriceRepository.count());
+                metrics.put("publishedMarketPriceRecords", marketPriceRepository.count());
             }
         }
         return metrics;

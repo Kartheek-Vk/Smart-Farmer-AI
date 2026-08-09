@@ -32,7 +32,8 @@ class ApiBehaviourIntegrationTest extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FARM_PAYLOAD.formatted("BANANA")))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errors[0]").value(org.hamcrest.Matchers.startsWith("soilType: must be one of")));
 
         mockMvc.perform(post("/api/v1/farms")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -53,6 +54,13 @@ class ApiBehaviourIntegrationTest extends IntegrationTest {
 
         mockMvc.perform(delete("/api/v1/health").header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isMethodNotAllowed());
+
+        mockMvc.perform(get("/api/v1/farms")
+                        .param("sort", "nonexistentField,asc")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]")
+                        .value(org.hamcrest.Matchers.containsString("unknown sort or filter property")));
     }
 
     @Test
