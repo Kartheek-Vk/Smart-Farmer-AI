@@ -1,6 +1,6 @@
 package com.smartfarmer.ai.health;
 
-import com.smartfarmer.ai.common.dto.ApiResponse;
+import com.smartfarmer.ai.common.api.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

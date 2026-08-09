@@ -62,6 +62,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.failure("Access denied", List.of("You are not authorized to access this resource"), request.getRequestURI()));
     }
 
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleServiceUnavailable(ServiceUnavailableException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.failure(ex.getMessage(), List.of(ex.getMessage()), request.getRequestURI()));
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

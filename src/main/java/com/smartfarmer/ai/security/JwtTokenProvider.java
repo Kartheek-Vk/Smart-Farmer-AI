@@ -1,43 +1,48 @@
 package com.smartfarmer.ai.security;
 
-import com.smartfarmer.ai.common.enums.UserRole;
 import com.smartfarmer.ai.common.enums.TokenType;
+import com.smartfarmer.ai.common.enums.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
-import java.security.Key;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.crypto.SecretKey;
+import org.springframework.stereotype.Component;
 
 @Component
 public class JwtTokenProvider {
 
+    private static final int MINIMUM_SECRET_LENGTH = 32;
+
     private final SecretKey key;
     private final JwtProperties jwtProperties;
 
-    public Key getKey() {
-        return this.key;
-    }
-
     public JwtTokenProvider(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
-        this.key = Keys.hmacShaKeyFor(jwtProperties.secret().getBytes());
+        String secret = jwtProperties.secret();
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < MINIMUM_SECRET_LENGTH) {
+            throw new IllegalStateException("app.jwt.secret must be configured with at least "
+                    + MINIMUM_SECRET_LENGTH + " characters");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String createAccessToken(String userId, Set<UserRole> roles) {
         Instant now = Instant.now();
-        String rolesStr = roles.stream().map(Enum::name).collect(Collectors.joining(","));
+        String rolesClaim = roles.stream().map(Enum::name).sorted().collect(Collectors.joining(","));
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(userId)
-                .claim("roles", rolesStr)
+                .claim("roles", rolesClaim)
                 .claim("type", TokenType.ACCESS.name())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(jwtProperties.accessExpiration())))
+                .expiration(Date.from(now.plus(accessTokenValidity())))
                 .signWith(key)
                 .compact();
     }
@@ -45,10 +50,11 @@ public class JwtTokenProvider {
     public String createRefreshToken(String userId) {
         Instant now = Instant.now();
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(userId)
                 .claim("type", TokenType.REFRESH.name())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(jwtProperties.refreshExpiration())))
+                .expiration(Date.from(now.plus(refreshTokenValidity())))
                 .signWith(key)
                 .compact();
     }
@@ -57,7 +63,15 @@ public class JwtTokenProvider {
         try {
             parseClaims(token);
             return true;
-        } catch (Exception ex) {
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
+    public boolean isTokenOfType(String token, TokenType expected) {
+        try {
+            return expected == getTokenType(token);
+        } catch (RuntimeException ex) {
             return false;
         }
     }
@@ -74,8 +88,12 @@ public class JwtTokenProvider {
         return TokenType.valueOf(parseClaims(token).get("type", String.class));
     }
 
-    public long getRefreshTokenValidityMs() {
-        return jwtProperties.refreshExpiration();
+    public Duration accessTokenValidity() {
+        return Duration.ofSeconds(jwtProperties.accessExpiration());
+    }
+
+    public Duration refreshTokenValidity() {
+        return Duration.ofSeconds(jwtProperties.refreshExpiration());
     }
 
     private Claims parseClaims(String token) {

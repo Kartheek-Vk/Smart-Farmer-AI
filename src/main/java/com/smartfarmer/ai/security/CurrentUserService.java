@@ -36,6 +36,10 @@ public class CurrentUserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Authenticated user was not found"));
     }
 
+    public User getCurrentUser() {
+        return currentUser();
+    }
+
     public boolean isAdmin(User user) {
         return user.getRolesAsEnumSet().contains(UserRole.ADMIN);
     }
